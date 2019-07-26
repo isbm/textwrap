@@ -4,17 +4,18 @@ This is a port of Python's "textwrap" module for Go. Well, sort of...
 
 # Limitations
 
-This modules (at least for now) is not wrapping that usually is
-preferably on whitespaces and right after hyphens in compound words, 
-as it is customary in English. That said, `break_on_hyphens` and
-`break_long_words` are not yet supported.
+This modules (at least for now) is not wrapping on whitespaces and
+right after hyphens in compound words, as it is customary in
+English. That said, `break_on_hyphens` and `break_long_words` are not
+yet supported.
 
-There is no supprt (yet) for `fix_sentence_endings` either, which
-doesn't work reliably in Python either (it requires two spaces and
-other conditions).
+Also `fix_sentence_endings` is not supported as well for now, which
+doesn't work reliably in Python anyways (since it requires two spaces
+and other conditions nobody cares of).
 
-Implementation for hyphens support is planned, while
-`fix_sentence_endings` is not (however your PR is welcome!).
+The implementation for hyphens support is planned however, while
+`fix_sentence_endings` is not (but! your PRs are welcome and free to
+implement it).
 
 # Usage
 
@@ -71,4 +72,13 @@ wrapper := textwrap.NewTextWrap().
 ```
 
 Have fun.
+
+# Bonus Functions
+
+While it is possible to do it differently, this module also gives you
+string whitespace trimming for _only_ leading whitespace (`TrimLeft`) or _only_
+trailing (`TrimRight`), as contrary to `strings.TrimSpace` that trims
+everything.
+
+The whitespace is the same as defined in Python's `strings.whitespace`.
 
