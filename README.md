@@ -1,2 +1,74 @@
-# textwrap
-Port of Python's "textwrap" module to Go. Sort of...
+# Text Wrap
+
+This is a port of Python's "textwrap" module for Go. Well, sort of...
+
+# Limitations
+
+This modules (at least for now) is not wrapping that usually is
+preferably on whitespaces and right after hyphens in compound words, 
+as it is customary in English. That said, `break_on_hyphens` and
+`break_long_words` are not yet supported.
+
+There is no supprt (yet) for `fix_sentence_endings` either, which
+doesn't work reliably in Python either (it requires two spaces and
+other conditions).
+
+Implementation for hyphens support is planned, while
+`fix_sentence_endings` is not (however your PR is welcome!).
+
+# Usage
+
+The usage is quite similar as in Python:
+
+```go
+import (
+	"fmt"
+	"github.com/isbm/textwrap"
+)
+
+...
+
+text := "Your very long text here"
+wrapper := textwrap.NewTextWrap() // Defaults to 70
+fmt.Println(wrapper.Fill(text))      // Returns string
+
+// Get each line
+for idx, line := range wrapper.Wrap(text) {
+	fmt.Println(idx, line)
+}
+
+```
+
+De-dent is also implemented and works exactly the same as in Python:
+
+```go
+multilineText := `
+    There is some multiline text
+  with different identation
+      everywhere. So it will be
+    aligned to the minimal.
+`
+
+// This will remove two leading spaces from each line
+fmt.Println(wrapper.Dedent(multilineText))
+
+```
+
+
+# Configuration
+
+You can setup wrapper object constructor the following way (given values are its
+defaults, so you can change it to whatever you want):
+
+```go
+wrapper := textwrap.NewTextWrap().
+	SetNewLine("\n").
+	SetWidth(70),
+	SetTabSpacesWidth(4).
+	SetDropWhitespace(true).
+	SetInitialIndent("").
+	SetReplaceWhitespace(true)
+```
+
+Have fun.
+
