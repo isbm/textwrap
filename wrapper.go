@@ -1,5 +1,10 @@
 package textwrap
 
+import (
+	"sort"
+	"strings"
+)
+
 const (
 	WHITESPACE = " \t\n\r\x0b\x0c"
 )
@@ -10,6 +15,7 @@ type textWrap struct {
 	dropwWhitespace   bool
 	initialIndent     string
 	tabSpacesWidth    int
+	newline           string
 }
 
 // Constructor
@@ -20,7 +26,24 @@ func NewTextWrap() *textWrap {
 	wrap.initialIndent = ""
 	wrap.dropwWhitespace = true
 	wrap.tabSpacesWidth = 4
+	wrap.newline = "\n"
 
+	return wrap
+}
+
+/*
+  Sets newline character. Default is "\n".
+*/
+func (wrap *textWrap) SetNewline(newline string) *textWrap {
+	wrap.newline = newline
+	return wrap
+}
+
+/*
+  Sets width of the wrapped text so the content does not exceedes it.
+*/
+func (wrap *textWrap) SetWidth(width int) *textWrap {
+	wrap.width = width
 	return wrap
 }
 
@@ -73,9 +96,74 @@ func (wrap *textWrap) Fill(text string) string {
 	return ""
 }
 
+// Trim leading whitespace from the text line
+func (wrap *textWrap) TrimLeft(line string) string {
+	var buff strings.Builder
+	ws := false
+	for idx, char := range line {
+		if strings.Contains(WHITESPACE, string(char)) {
+			if idx == 0 {
+				ws = true
+			}
+
+			if ws {
+				continue
+			}
+		}
+		buff.WriteRune(char)
+		ws = false
+	}
+
+	return buff.String()
+}
+
+// Reverses a string
+func (wrap *textWrap) reverseString(text string) string {
+	rns := []rune(text)
+	var buff string
+	for i := len(rns) - 1; i >= 0; i-- {
+		buff += string(rns[i])
+	}
+	return buff
+}
+
+// Trim trailing whitespace from the text line
+func (wrap *textWrap) TrimRight(line string) string {
+	return wrap.reverseString(wrap.TrimLeft(wrap.reverseString(line)))
+}
+
+func (wrap *textWrap) ExpandTabs(line string) string {
+	return strings.Replace(line, "\t", "    ", -1)
+}
+
 /*
   Remove any common leading whitespace from every line in text.
 */
 func (wrap *textWrap) Dedent(text string) string {
-	return ""
+	buff := make([]string, 0)
+	wsbuff := make([]int, 0)
+	for _, line := range strings.Split(text, wrap.newline) {
+		if len(line) > 0 {
+			line = wrap.ExpandTabs(line)
+			wsbuff = append(wsbuff, len(line)-len(wrap.TrimLeft(line)))
+		}
+		buff = append(buff, line)
+	}
+	sort.Ints(wsbuff)
+	minws := wsbuff[0]
+	for idx, val := range wsbuff {
+		if idx == 0 || val < minws {
+			minws = val
+		}
+	}
+
+	var sbuff strings.Builder
+	for _, line := range buff {
+		if len(line) > 0 {
+			line = line[minws:]
+		}
+		sbuff.WriteString(line + wrap.newline)
+	}
+
+	return sbuff.String()
 }
