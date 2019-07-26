@@ -1,6 +1,7 @@
 package textwrap
 
 import (
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -85,7 +86,26 @@ func (wrap *textWrap) SetReplaceWhitespace(replace bool) *textWrap {
   Returns a list of output lines, without final newlines.
 */
 func (wrap *textWrap) Wrap(text string) []string {
-	return nil
+	buff := make([]string, 0)
+	line := ""
+	var pl *string
+	for _, word := range regexp.MustCompile(" ").Split(text, -1) {
+		if len(line+word) < wrap.width {
+			line += word + " "
+			if pl == nil {
+				pl = &line
+			}
+		} else {
+			buff = append(buff, strings.TrimSpace(line))
+			line = ""
+			pl = nil
+		}
+	}
+	if pl != nil {
+		buff = append(buff, strings.TrimSpace(*pl))
+	}
+
+	return buff
 }
 
 /*
@@ -93,7 +113,7 @@ func (wrap *textWrap) Wrap(text string) []string {
   a single string containing the wrapped paragraph.
 */
 func (wrap *textWrap) Fill(text string) string {
-	return ""
+	return strings.Join(wrap.Wrap(text), wrap.newline)
 }
 
 // Trim leading whitespace from the text line
