@@ -1,3 +1,9 @@
+// Package textwrap is a semi-port of Python's equivalent module "textwrap".
+// Most of the functionality is similar (or in a progress to get there).
+// The textwrap module provides two convenience methods: Wrap() and Fill().
+// All of them are methods of textWrap class that does all the work.
+// Package also provides an utility function Dedent() as well as
+// TrimLeft() and TrimRight() to strip a whitespace respectively.
 package textwrap
 
 import (
@@ -10,6 +16,8 @@ const (
 	WHITESPACE = " \t\n\r\x0b\x0c"
 )
 
+// The textWrap is an object for keeping configuration of an instance
+// that performs the wrapping.
 type textWrap struct {
 	width             int
 	replaceWhitespace bool
@@ -20,7 +28,9 @@ type textWrap struct {
 	newline           string
 }
 
-// Constructor
+// NewTextWrap function returns text wrapper instance object.
+// Constructor does not accept any params, however can be configured
+// in chain methods setting configuration settings.
 func NewTextWrap() *textWrap {
 	wrap := new(textWrap)
 	wrap.width = 70
@@ -34,68 +44,52 @@ func NewTextWrap() *textWrap {
 	return wrap
 }
 
-/*
-  Sets tab expansion to spaces. The width of the spaces is set
-  by SetTabSpacesWidth method.
-*/
+// SetExpandTabls sets tab expansion to spaces. The width of the spaces is set
+// by SetTabSpacesWidth method.
 func (wrap *textWrap) SetExpandTabs(expand bool) *textWrap {
 	wrap.expandTabs = expand
 	return wrap
 }
 
-/*
-  Sets newline character. Default is "\n".
-*/
+// SetNewline sets newline character. Default is "\n".
 func (wrap *textWrap) SetNewline(newline string) *textWrap {
 	wrap.newline = newline
 	return wrap
 }
 
-/*
-  Sets width of the wrapped text so the content does not exceedes it.
-*/
+// SetWidth sets width of the wrapped text so the content does not exceedes it.
 func (wrap *textWrap) SetWidth(width int) *textWrap {
 	wrap.width = width
 	return wrap
 }
 
-/*
-  Sets replace whitespace property
-*/
+// SetTabSpacesWidth sets replace whitespace property
 func (wrap *textWrap) SetTabSpacesWidth(width int) *textWrap {
 	wrap.tabSpacesWidth = width
 	return wrap
 }
 
-/*
-  Sets drop whitespace property
-*/
+// SetDropWhitespace sets drop whitespace property
 func (wrap *textWrap) SetDropWhitespace(drop bool) *textWrap {
 	wrap.dropwWhitespace = drop
 	return wrap
 }
 
-/*
-  Sets initial indent property
-*/
+// SetInitialIndent sets initial indent property
 func (wrap *textWrap) SetInitialIndent(indent string) *textWrap {
 	wrap.initialIndent = indent
 	return wrap
 }
 
-/*
-  Sets replace whitespace property
-*/
+// SetReplaceWhitespace sets replace whitespace property
 func (wrap *textWrap) SetReplaceWhitespace(replace bool) *textWrap {
 	wrap.replaceWhitespace = replace
 	return wrap
 }
 
-/*
-  Wraps the single paragraph in text (a string)
-  so every line is at most width characters long.
-  Returns a list of output lines, without final newlines.
-*/
+// Wrap method sraps the single paragraph in text (a string)
+// so every line is at most width characters long.
+// Returns a list of output lines, without final newlines.
 func (wrap *textWrap) Wrap(text string) []string {
 	buff := make([]string, 0)
 	line := ""
@@ -112,17 +106,13 @@ func (wrap *textWrap) Wrap(text string) []string {
 	return buff
 }
 
-/*
-  Wraps the single paragraph in text, and returns
-  a single string containing the wrapped paragraph.
-*/
+// Fill method wraps the single paragraph in text, and returns
+// a single string containing the wrapped paragraph.
 func (wrap *textWrap) Fill(text string) string {
 	return strings.Join(wrap.Wrap(text), wrap.newline)
 }
 
-/*
-  Get configured whitespace
-*/
+// Internal method. Gets configured whitespace.
 func (wrap *textWrap) getCurrentWhitespace() string {
 	var ws string
 	if !wrap.expandTabs {
@@ -133,7 +123,7 @@ func (wrap *textWrap) getCurrentWhitespace() string {
 	return ws
 }
 
-// Trim leading whitespace from the text line
+// TrimLeft trimming leading whitespace from the text line
 func (wrap *textWrap) TrimLeft(line string) string {
 	var buff strings.Builder
 	ws := false
@@ -155,7 +145,7 @@ func (wrap *textWrap) TrimLeft(line string) string {
 	return buff.String()
 }
 
-// Reverses a string
+// Internal method. Reverses a string
 func (wrap *textWrap) reverseString(text string) string {
 	rns := []rune(text)
 	var buff string
@@ -165,11 +155,12 @@ func (wrap *textWrap) reverseString(text string) string {
 	return buff
 }
 
-// Trim trailing whitespace from the text line
+// TrimRight trimms trailing whitespace from the text line
 func (wrap *textWrap) TrimRight(line string) string {
 	return wrap.reverseString(wrap.TrimLeft(wrap.reverseString(line)))
 }
 
+// ExpandTabs converts tabs to an amount of spaces, set by SetTabSpacesWidth
 func (wrap *textWrap) ExpandTabs(line string) string {
 	if wrap.expandTabs {
 		line = strings.Replace(line, "\t", strings.Repeat(" ", wrap.tabSpacesWidth), -1)
@@ -178,9 +169,7 @@ func (wrap *textWrap) ExpandTabs(line string) string {
 	return line
 }
 
-/*
-  Remove any common leading whitespace from every line in text.
-*/
+// Method Dedent removes any common leading whitespace from every line in text.
 func (wrap *textWrap) Dedent(text string) string {
 	buff := make([]string, 0)
 	wsbuff := make([]int, 0)
