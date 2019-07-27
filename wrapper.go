@@ -14,6 +14,7 @@ type textWrap struct {
 	width             int
 	replaceWhitespace bool
 	dropwWhitespace   bool
+	expandTabs        bool
 	initialIndent     string
 	tabSpacesWidth    int
 	newline           string
@@ -24,11 +25,21 @@ func NewTextWrap() *textWrap {
 	wrap := new(textWrap)
 	wrap.width = 70
 	wrap.replaceWhitespace = true
-	wrap.initialIndent = ""
 	wrap.dropwWhitespace = true
+	wrap.expandTabs = true
+	wrap.initialIndent = ""
 	wrap.tabSpacesWidth = 4
 	wrap.newline = "\n"
 
+	return wrap
+}
+
+/*
+  Sets tab expansion to spaces. The width of the spaces is set
+  by SetTabSpacesWidth method.
+*/
+func (wrap *textWrap) SetExpandTabs(expand bool) *textWrap {
+	wrap.expandTabs = expand
 	return wrap
 }
 
@@ -133,8 +144,9 @@ func (wrap *textWrap) getCurrentWhitespace() string {
 func (wrap *textWrap) TrimLeft(line string) string {
 	var buff strings.Builder
 	ws := false
+	currentWhitespace := wrap.getCurrentWhitespace()
 	for idx, char := range line {
-		if strings.Contains(WHITESPACE, string(char)) {
+		if strings.Contains(currentWhitespace, string(char)) {
 			if idx == 0 {
 				ws = true
 			}
