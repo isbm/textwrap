@@ -178,11 +178,16 @@ func (wrap *textWrap) Dedent(text string) string {
 	}
 
 	var sbuff strings.Builder
-	for _, line := range buff {
+	buffLen := len(buff)
+	for idx, line := range buff {
 		if len(line) > 0 {
 			line = line[minws:]
 		}
-		sbuff.WriteString(line + wrap.newline)
+		if idx < buffLen-1 {
+			sbuff.WriteString(line + wrap.newline)
+		} else {
+			sbuff.WriteString(line)
+		}
 	}
 
 	return sbuff.String()
