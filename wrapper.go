@@ -99,22 +99,15 @@ func (wrap *textWrap) SetReplaceWhitespace(replace bool) *textWrap {
 func (wrap *textWrap) Wrap(text string) []string {
 	buff := make([]string, 0)
 	line := ""
-	var pl *string
 	for _, word := range regexp.MustCompile(" ").Split(text, -1) {
 		if len(line+word) < wrap.width {
 			line += word + " "
-			if pl == nil {
-				pl = &line
-			}
 		} else {
 			buff = append(buff, strings.TrimSpace(line))
-			line = ""
-			pl = nil
+			line = word + " "
 		}
 	}
-	if pl != nil {
-		buff = append(buff, strings.TrimSpace(*pl))
-	}
+	buff = append(buff, strings.TrimSpace(line))
 
 	return buff
 }
