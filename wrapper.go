@@ -116,6 +116,19 @@ func (wrap *textWrap) Fill(text string) string {
 	return strings.Join(wrap.Wrap(text), wrap.newline)
 }
 
+/*
+  Get configured whitespace
+*/
+func (wrap *textWrap) getCurrentWhitespace() string {
+	var ws string
+	if !wrap.expandTabs {
+		ws = strings.Replace(WHITESPACE, "\t", "", -1)
+	} else {
+		ws = WHITESPACE
+	}
+	return ws
+}
+
 // Trim leading whitespace from the text line
 func (wrap *textWrap) TrimLeft(line string) string {
 	var buff strings.Builder
@@ -153,7 +166,11 @@ func (wrap *textWrap) TrimRight(line string) string {
 }
 
 func (wrap *textWrap) ExpandTabs(line string) string {
-	return strings.Replace(line, "\t", strings.Repeat(" ", wrap.tabSpacesWidth), -1)
+	if wrap.expandTabs {
+		line = strings.Replace(line, "\t", strings.Repeat(" ", wrap.tabSpacesWidth), -1)
+	}
+
+	return line
 }
 
 /*
