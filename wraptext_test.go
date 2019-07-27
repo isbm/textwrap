@@ -12,9 +12,9 @@ const LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, " 
 	"velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat " +
 	"cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-	/*
-	   Test filler (joins wrapped array) by default settings.
-	*/
+/*
+   Test filler (joins wrapped array) by default settings.
+*/
 func TestFillWrappingDefault(t *testing.T) {
 	expected := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do\n" +
 		"eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim\n" +
