@@ -153,7 +153,7 @@ func (wrap *textWrap) TrimRight(line string) string {
 }
 
 func (wrap *textWrap) ExpandTabs(line string) string {
-	return strings.Replace(line, "\t", "    ", -1)
+	return strings.Replace(line, "\t", strings.Repeat(" ", wrap.tabSpacesWidth), -1)
 }
 
 /*
