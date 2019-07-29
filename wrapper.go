@@ -99,12 +99,17 @@ func (wrap *textWrap) Wrap(text string) []string {
 		if len(line+word) < wrap.width {
 			line += word + " "
 		} else {
-			buff = append(buff, strings.TrimSpace(line))
+			line = strings.TrimSpace(line)
+			if line != "" {
+				buff = append(buff, strings.TrimSpace(line))
+			}
 			line = word + " "
 		}
 	}
-	buff = append(buff, strings.TrimSpace(line))
-
+	line = strings.TrimSpace(line)
+	if line != "" {
+		buff = append(buff, strings.TrimSpace(line))
+	}
 	return buff
 }
 
