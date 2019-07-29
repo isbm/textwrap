@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	// Symbols that are subject to be stripped
+	// WHITESPACE is a string of symbols that are subject to be stripped
+	// in the incoming data
 	WHITESPACE = " \t\n\r\x0b\x0c"
 )
 
