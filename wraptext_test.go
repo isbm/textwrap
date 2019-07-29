@@ -86,3 +86,13 @@ func TestWrapDefault150(t *testing.T) {
 		assert.Assert(t, len(line) <= 150)
 	}
 }
+
+// Test same length data. This should not be wrapped, but stay "at the edge".
+func TestWrapSameSize(t *testing.T) {
+	somePhrase := "Supercalifragilisticexpialidocious"
+	expected := []string{somePhrase}
+	result := NewTextWrap().SetWidth(len(somePhrase)).Wrap(somePhrase)
+
+	assert.Assert(t, len(result) == len(expected))
+	assert.Equal(t, somePhrase, result[0])
+}
