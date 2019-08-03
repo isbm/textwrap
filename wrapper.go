@@ -30,6 +30,8 @@ type textWrap struct {
 	tabSpacesWidth    int
 	newline           string
 	stripAnsiRegex    *regexp.Regexp
+	ansiSavvy         bool
+	ansiStrip         bool
 }
 
 // NewTextWrap function returns text wrapper instance object.
@@ -45,7 +47,22 @@ func NewTextWrap() *textWrap {
 	wrap.tabSpacesWidth = 4
 	wrap.newline = "\n"
 	wrap.stripAnsiRegex = regexp.MustCompile(_ansiregex)
+	wrap.ansiSavvy = false
+	wrap.ansiStrip = false
 
+	return wrap
+}
+
+// This method works only for plain text wrapping. In case incoming text
+// contains ANSI escapes, it will be just stripped away.
+func (wrap *textWrap) SetStripANSI(strip bool) *textWrap {
+	wrap.ansiStrip = strip
+	return wrap
+}
+
+// Set ANSI savvy (or not). Default: OFF
+func (wrap *textWrap) SetANSISavvy(mode bool) *textWrap {
+	wrap.ansiSavvy = mode
 	return wrap
 }
 
@@ -100,7 +117,7 @@ func (wrap *textWrap) SetReplaceWhitespace(replace bool) *textWrap {
 			  To fix this, indexes needs to be re-grouped if they care one tag after another,
 			  so then this structure is treated at once, and thus all grouped tags are carried over.
 */
-func (wrap *textWrap) AnsiWrap(text string) []string {
+func (wrap *textWrap) ansiWrap(text string) []string {
 	// Get all tags
 	indexes := wrap.stripAnsiRegex.FindAllStringSubmatchIndex(text, -1)
 	ansitags := wrap.stripAnsiRegex.FindAllStringSubmatch(text, -1)
@@ -188,6 +205,20 @@ func (wrap *textWrap) AnsiWrap(text string) []string {
 // so every line is at most width characters long.
 // Returns a list of output lines, without final newlines.
 func (wrap *textWrap) Wrap(text string) []string {
+	var out []string
+	if wrap.ansiSavvy {
+		out = wrap.ansiWrap(text)
+	} else {
+		out = wrap.plainWrap(text)
+	}
+	return out
+}
+
+// Plain wrap
+func (wrap *textWrap) plainWrap(text string) []string {
+	if wrap.ansiStrip {
+		text = wrap.stripAnsi(text)
+	}
 	buff := make([]string, 0)
 	line := ""
 	for _, word := range regexp.MustCompile(" ").Split(text, -1) {
@@ -211,7 +242,7 @@ func (wrap *textWrap) Wrap(text string) []string {
 // Fill method wraps the single paragraph in text, and returns
 // a single string containing the wrapped paragraph.
 func (wrap *textWrap) Fill(text string) string {
-	return strings.Join(wrap.AnsiWrap(text), wrap.newline)
+	return strings.Join(wrap.Wrap(text), wrap.newline)
 }
 
 // Internal method. Gets configured whitespace.
