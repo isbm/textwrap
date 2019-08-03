@@ -16,6 +16,7 @@ const (
 	// WHITESPACE is a string of symbols that are subject to be stripped
 	// in the incoming data
 	WHITESPACE = " \t\n\r\x0b\x0c"
+	_ansiregex = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 )
 
 // The textWrap is an object for keeping configuration of an instance
@@ -28,6 +29,9 @@ type textWrap struct {
 	initialIndent     string
 	tabSpacesWidth    int
 	newline           string
+	stripAnsiRegex    *regexp.Regexp
+	ansiSavvy         bool
+	ansiStrip         bool
 }
 
 // NewTextWrap function returns text wrapper instance object.
@@ -42,7 +46,23 @@ func NewTextWrap() *textWrap {
 	wrap.initialIndent = ""
 	wrap.tabSpacesWidth = 4
 	wrap.newline = "\n"
+	wrap.stripAnsiRegex = regexp.MustCompile(_ansiregex)
+	wrap.ansiSavvy = false
+	wrap.ansiStrip = false
 
+	return wrap
+}
+
+// This method works only for plain text wrapping. In case incoming text
+// contains ANSI escapes, it will be just stripped away.
+func (wrap *textWrap) SetStripANSI(strip bool) *textWrap {
+	wrap.ansiStrip = strip
+	return wrap
+}
+
+// Set ANSI savvy (or not). Default: OFF
+func (wrap *textWrap) SetANSISavvy(mode bool) *textWrap {
+	wrap.ansiSavvy = mode
 	return wrap
 }
 
@@ -89,10 +109,116 @@ func (wrap *textWrap) SetReplaceWhitespace(replace bool) *textWrap {
 	return wrap
 }
 
+// ANSI wrap
+/*
+  Limitation: indexes are isolated at the moment, so each ANSI tag is treated individually.
+			  That leads to only one tag carry-over, all others are lost.
+
+			  To fix this, indexes needs to be re-grouped if they care one tag after another,
+			  so then this structure is treated at once, and thus all grouped tags are carried over.
+*/
+func (wrap *textWrap) ansiWrap(text string) []string {
+	// Get all tags
+	indexes := wrap.stripAnsiRegex.FindAllStringSubmatchIndex(text, -1)
+	ansitags := wrap.stripAnsiRegex.FindAllStringSubmatch(text, -1)
+
+	buff := make([]string, 0)
+	line := ""
+
+	// Wrap plain text
+	textWords := regexp.MustCompile(" ").Split(wrap.stripAnsi(text), -1)
+	for idx, word := range textWords {
+		if strings.TrimSpace(word) == "" { // Throw away extra spaces
+			continue
+		}
+
+		if len(line+word) < wrap.width {
+			line += word
+			if idx < len(textWords)-1 {
+				line += " "
+			}
+		} else {
+			buff = append(buff, line)
+			line = word
+			if idx < len(textWords)-1 {
+				line += " "
+			}
+		}
+	}
+	buff = append(buff, line)
+
+	// Re-install ANSI tags
+	carryover := make(map[int]string)
+	linepath := 0
+	rest := 0
+	lastLine := ""
+	for idx, line := range buff {
+		lastLine = line
+		for escIdx, escSetOff := range indexes {
+			escOff := escSetOff[0]
+			if escOff < linepath {
+				continue
+			}
+			if escOff > len(line)+linepath {
+				rest = escIdx
+				carryover[idx+1] = ansitags[escIdx-1][0]
+				break
+			}
+
+			var ansiOffset int
+			if linepath == 0 { // first line
+				ansiOffset = escOff
+			} else {
+				ansiOffset = escOff - linepath
+			}
+			line = line[:ansiOffset] + ansitags[escIdx][0] + line[ansiOffset:]
+		}
+
+		linepath += len(line)
+		buff[idx] = line
+	}
+
+	// Fetch the rest of the tags for the last line (this is quite buggy)
+	for escIdx, escSetOff := range indexes[rest:] {
+		escOff := linepath - escSetOff[0] - (len(lastLine) - 1)
+
+		if escOff < len(lastLine) {
+			lastLine = lastLine[:escOff] + ansitags[escIdx+rest][0] + lastLine[escOff:]
+		}
+	}
+	buff[len(buff)-1] = lastLine
+
+	// Install ANSI-terminator at each end of the line
+	for idx, line := range buff {
+		buff[idx] = line + "\x1b[0m"
+	}
+
+	// Install carryover tags
+	for line, tag := range carryover {
+		buff[line] = tag + buff[line]
+	}
+
+	return buff
+}
+
 // Wrap method sraps the single paragraph in text (a string)
 // so every line is at most width characters long.
 // Returns a list of output lines, without final newlines.
 func (wrap *textWrap) Wrap(text string) []string {
+	var out []string
+	if wrap.ansiSavvy {
+		out = wrap.ansiWrap(text)
+	} else {
+		out = wrap.plainWrap(text)
+	}
+	return out
+}
+
+// Plain wrap
+func (wrap *textWrap) plainWrap(text string) []string {
+	if wrap.ansiStrip {
+		text = wrap.stripAnsi(text)
+	}
 	buff := make([]string, 0)
 	line := ""
 	for _, word := range regexp.MustCompile(" ").Split(text, -1) {
@@ -150,6 +276,12 @@ func (wrap *textWrap) TrimLeft(line string) string {
 	}
 
 	return buff.String()
+}
+
+// Allow support ANSI-colored data. If the data is not stripped out,
+// all the widths will be wrongly calculated
+func (wrap *textWrap) stripAnsi(data string) string {
+	return wrap.stripAnsiRegex.ReplaceAllString(data, "")
 }
 
 // Internal method. Reverses a string
